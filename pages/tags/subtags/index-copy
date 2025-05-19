@@ -1,0 +1,418 @@
+<?php include './action.php';?>
+
+<script src="/php/pim/assets/js/simple-datatables.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<?php if (!empty($errors)): ?>
+    <div id="error-message" class="flex items-start justify-center p-6 rounded text-danger bg-danger dark:bg-danger-dark-light fixed w-80 shadow-md shadow-danger" style='right:12px; min-height: 70px; top:70px; z-Index:999999;'>
+        <div class="flex text-white gap-2">
+            <div>
+            Please Fill <?php foreach ($errors as $error): ?>
+                <?= htmlspecialchars($error) ?>
+            <?php endforeach; ?>
+            </div>
+        </div>
+        <button type="button" class="ltr:ml-auto rtl:mr-auto hover:opacity-80" onclick="this.parentElement.remove()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"
+            fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" class="w-5 h-5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+<?php endif; ?>
+<div x-data="custom">
+    <div class="panel">
+        <div class="flex gap-3 items-center absolute top-5">
+            <?php if ($delete) : ?>
+                <button type="submit" class="btn btn-danger gap-2" disabled id="bulkDeleteBtn" name="bulk_delete">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.5001 6H3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
+                        <path d="M18.8334 8.5L18.3735 15.3991C18.1965 18.054 18.108 19.3815 17.243 20.1907C16.378 21 15.0476 21 12.3868 21H11.6134C8.9526 21 7.6222 21 6.75719 20.1907C5.89218 19.3815 5.80368 18.054 5.62669 15.3991L5.16675 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
+                        <path d="M9.5 11L10 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
+                        <path d="M14.5 11L14 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
+                        <path d="M6.5 6C6.55588 6 6.58382 6 6.60915 5.99936C7.43259 5.97849 8.15902 5.45491 8.43922 4.68032C8.44784 4.65649 8.45667 4.62999 8.47434 4.57697L8.57143 4.28571C8.65431 4.03708 8.69575 3.91276 8.75071 3.8072C8.97001 3.38607 9.37574 3.09364 9.84461 3.01877C9.96213 3 10.0932 3 10.3553 3H13.6447C13.9068 3 14.0379 3 14.1554 3.01877C14.6243 3.09364 15.03 3.38607 15.2493 3.8072C15.3043 3.91276 15.3457 4.03708 15.4286 4.28571L15.5257 4.57697C15.5433 4.62992 15.5522 4.65651 15.5608 4.68032C15.841 5.45491 16.5674 5.97849 17.3909 5.99936C17.4162 6 17.4441 6 17.5 6" stroke="currentColor" strokeWidth="1.5"></path>
+                    </svg>
+                </button>
+            <?php endif; ?>
+            <div 
+                x-data="{ showModal: <?= $showModal ? 'true' : 'false' ?> }" 
+                x-init="$watch('showModal', value => { 
+                    document.body.classList.toggle('overflow-hidden', value);
+                })"
+            >
+                <?php if ($create) : ?>
+                    <button @click="showModal = true" class="btn btn-dark">Create Sub Tag</button>
+                <?php endif; ?>
+                <!-- Modal Backdrop -->
+                <div class="fixed inset-0 bg-[black]/60 z-[999] hidden overflow-y-auto items-center justify-center" :class="showModal && '!block'">
+                    <div class="flex items-center justify-center min-h-screen px-4">
+                        <div class="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8 text-black dark:text-white-dark animate__animated" 
+                            :class="$store.app.rtlClass === 'rtl' ? 'animate__fadeInRight' : 'animate__fadeInLeft'"
+                        >
+                            <!-- Modal Header -->
+                            <div class="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
+                                <h5 class="font-bold text-lg">Add New Sub Tag</h5>
+                                <button type="button" class="text-white-dark hover:text-dark" @click="showModal = false">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                        class="w-6 h-6">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Modal Body -->
+                            <div class="p-5">
+                                <form action="" method="POST">
+                                    <div class="grid grid-cols-2 w-full gap-3">
+                                        <div>
+                                            <label>SubTag - En</label>
+                                            <input type="text" class="form-input" name="tagNameEn" value="<?= $_POST['tagNameEn'] ?? '' ?>" placeholder="SubTag - En">
+                                            <small style="color: #b91c1c;" class="mt-1"><?= $tnR ?></small>
+                                        </div>
+                                        <div>
+                                            <label>SubTag - Ar</label>
+                                            <input type="text" class="form-input" name="tagNameAr" value="<?= $_POST['tagNameAr'] ?? '' ?>" placeholder="SubTag - Ar">
+                                            <small style="color: #b91c1c;" class="mt-1"><?= $anR ?></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="w-full mt-3">
+                                        <label>Sorting</label>
+                                        <input type="number" class="form-input" name="sorting" value="<?= $_POST['sorting'] ?? '' ?>" placeholder="0">
+                                    </div>
+
+                                    <div class="w-full mt-3">
+                                        <label>Upload Icon</label>
+                                        <input type="text" class="form-input" name="uploadIcon" value="<?= $_POST['uploadIcon'] ?? '' ?>">
+                                    </div>
+
+                                    <div class="w-full mt-3 mb-16">
+                                        <label>Image Link App</label>
+                                        <input type="text" class="form-input" name="imageLink" value="<?= $_POST['imageLink'] ?? '' ?>">
+                                    </div>
+
+                                    <div class="flex justify-between items-center mt-16">
+                                        <label class="mt-5 mb-0">
+                                            <input type="checkbox" name="status" class="form-checkbox" value="1" <?= isset($_POST['status']) ? 'checked' : '' ?> />
+                                            <span class="mb-0">Enable this Sub Tag</span>
+                                        </label>
+                                        <button type="submit" name="save" class="btn btn-primary ltr:ml-4 rtl:mr-4">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table id="myTable" class="table-checkbox relative"></table>
+    </div>
+    <div 
+        x-data="{ showEditModal: false, editData: {} }" 
+        x-init="window.editData = (data) => { 
+            if (data && !showEditModal) { 
+                editData = data; 
+                showEditModal = true; 
+            } 
+        }"
+    >
+    <div 
+        class="fixed inset-0 bg-[black]/60 z-[999] hidden overflow-y-auto items-center justify-center"
+        :class="showEditModal && '!block'">
+        <div class="flex items-center justify-center min-h-screen px-4" >
+            <div 
+                class="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8 text-black dark:text-white-dark bg-white animate__animated"
+                :class="$store.app.rtlClass === 'rtl' ? 'animate__fadeInRight' : 'animate__fadeInLeft'">
+                <!-- Modal Header -->
+                <div class="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
+                    <h5 class="font-bold text-lg">Edit Product FAQ'S</h5>
+                    <button type="button" class="text-white-dark hover:text-dark" @click="showEditModal = false">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            class="w-6 h-6">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-5">
+                    <form action="" method="POST">
+                        <input type="hidden" name="id" :value="editData.id">
+                        <div class="grid grid-cols-2 w-full gap-3">
+                            <div>
+                                <label>SubTag - En</label>
+                                <input type="text" class="form-input" name="tagNameEn" :value="editData.name" placeholder="SubTag - En">
+                                <small style="color: #b91c1c;" class="mt-1"><?= $etnR ?></small>
+                            </div>
+                            <div>
+                                <label>SubTag - Ar</label>
+                                <input type="text" class="form-input" name="tagNameAr" :value="editData.name_ar" placeholder="SubTag - Ar">
+                                <small style="color: #b91c1c;" class="mt-1"><?= $eanR ?></small>
+                            </div>
+                        </div>
+
+                        <div class="w-full mt-3">
+                            <label>Sorting</label>
+                            <input type="number" class="form-input" name="sorting" :value="editData.sorting" placeholder="0">
+                        </div>
+
+                        <div class="w-full mt-3">
+                            <label>Upload Icon</label>
+                            <input type="text" class="form-input" name="uploadIcon" :value="editData.icon">
+                        </div>
+
+                        <div class="w-full mt-3 mb-16">
+                            <label>Image Link App</label>
+                            <input type="text" class="form-input" name="imageLink" :value="editData.image_link">
+                        </div>
+
+                        <div class="flex justify-between items-center mt-16">
+                            <label class="mt-5 mb-0">
+                                <input type="checkbox" name="status" class="form-checkbox" x-model="editData.status" :checked="editData.status == 1" />
+                                <span class="mb-0">Enable this Sub Tag</span>
+                            </label>
+                            <button type="submit" name="save" class="btn btn-primary ltr:ml-4 rtl:mr-4">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div 
+        x-data="{ showViewModal: false, editData: {} }" 
+        x-init="window.viewData = (data) => { 
+            if (data && !showViewModal) { 
+                editData = data; 
+                showViewModal = true; 
+            } 
+        }"
+    >
+        <div 
+            class="fixed inset-0 bg-[black]/60 z-[999] hidden overflow-y-auto items-center justify-center"
+            :class="showViewModal && '!block'">
+            <div class="flex items-center justify-center min-h-screen px-4" >
+                <div 
+                    class="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8 text-black dark:text-white-dark bg-white animate__animated"
+                    :class="$store.app.rtlClass === 'rtl' ? 'animate__fadeInRight' : 'animate__fadeInLeft'">
+                    <!-- Modal Header -->
+                    <div class="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
+                        <h5 class="font-bold text-lg">View Product FAQ'S</h5>
+                        <button type="button" class="text-white-dark hover:text-dark" @click="showViewModal = false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width= "1.5" stroke-linecap="round" stroke-linejoin="round"
+                                class="w-6 h-6">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                <div class="p-5">
+                    <form action="" method="POST">
+                        <input type="hidden" name="id" :value="editData.id">
+                        <div class="grid grid-cols-2 w-full gap-3">
+                            <div>
+                                <label>SubTag - En</label>
+                                <input type="text" class="form-input" name="tagNameEn" disabled :value="editData.name" placeholder="SubTag - En">
+                                <small style="color: #b91c1c;" class="mt-1"><?= $etnR ?></small>
+                            </div>
+                            <div>
+                                <label>SubTag - Ar</label>
+                                <input type="text" class="form-input" name="tagNameAr" disabled :value="editData.name_ar" placeholder="SubTag - Ar">
+                                <small style="color: #b91c1c;" class="mt-1"><?= $eanR ?></small>
+                            </div>
+                        </div>
+
+                        <div class="w-full mt-3">
+                            <label>Sorting</label>
+                            <input type="number" class="form-input" name="sorting" disabled :value="editData.sorting" placeholder="0">
+                        </div>
+
+                        <div class="w-full mt-3">
+                            <label>Upload Icon</label>
+                            <input type="text" class="form-input" name="uploadIcon" disabled :value="editData.icon">
+                        </div>
+
+                        <div class="w-full mt-3 mb-16">
+                            <label>Image Link App</label>
+                            <input type="text" class="form-input" name="imageLink" disabled :value="editData.image_link">
+                        </div>
+
+                        <div class="flex justify-between items-center mt-16">
+                            <label class="mt-5 mb-0">
+                                <input type="checkbox" name="status" class="form-checkbox" disabled x-model="editData.status" :checked="editData.status == 1" />
+                                <span class="mb-0">Enable this Sub Tag</span>
+                            </label>
+                            <button type='button' class="btn btn-primary ltr:ml-4 rtl:mr-4" @click="showViewModal = false">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    table.table-checkbox thead tr th:first-child {
+        width: 1px !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("alpine:init", () => {
+        Alpine.data("custom", () => ({
+            ids: [],  // Holds selected IDs
+            tableData: <?= json_encode($users) ?>,
+            init() {
+                // Render the data table
+                const data = this.tableData.map(user => {
+                    const id = user[0];
+                    return [
+                        `<input type="checkbox" class="form-checkbox item-checkbox" name="check" value="${id}" onclick="updateDis()">`,
+                        `<span style='font-weight:800;' class='text-info'>${user[0]}</span>`,
+                        user[1],
+                        user[2],
+                        user[3],
+                        user[4],
+                        user[5],
+                    ];
+                });
+
+                const headings = [
+                    `<input type="checkbox" id="select-all" class="form-checkbox" onclick="toggleSelectAll(this)">`,
+                    "ID",
+                    "SubTag - En",
+                    "Family Name",
+                    "Sorting",
+                    "Status",
+                    "Action"
+                ];
+
+                this.datatable = new simpleDatatables.DataTable("#myTable", {
+                    data: {
+                        headings,
+                        data
+                    },
+                    perPage: 10,
+                    perPageSelect: [10, 20, 30, 50, 100],
+                    columns: [{
+                        select: 0,
+                        sortable: false,
+                    }],
+                    firstLast: true,
+                    labels: {
+                        perPage: "{select}"
+                    },
+                    layout: {
+                        top: "{search}",
+                        bottom: "{info}{select}{pager}",
+                    },
+                });
+
+                // Delay to allow table to render
+                setTimeout(() => this.setupCheckboxHandlers(), 500);
+            },
+
+            setupCheckboxHandlers() {
+                const table = document.getElementById("myTable");
+
+                // Master checkbox
+                const selectAllCheckbox = table.querySelector("#select-all");
+                selectAllCheckbox?.addEventListener("change", function () {
+                    const checkboxes = table.querySelectorAll(".form-checkbox");
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+
+                // Re-check master if all are checked manually
+                table.addEventListener("change", function () {
+                    const checkboxes = table.querySelectorAll(".form-checkbox");
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                });
+            },
+        }));
+    });
+    document.getElementById('bulkDeleteBtn').addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.form-checkbox:checked');
+        const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+        if (selectedIds.length === 0) {
+            alert("Please select at least one User to delete.");
+            return;
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/php/pim/pages/tags/subtags/delete.php';
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
+<script>
+    function editData(row) {
+        window.dispatchEvent(new CustomEvent('open-edit-modal', {
+            detail: row
+        }));
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('editModal', () => ({
+            showEditModal: false,
+            formData: {},
+            init() {
+                window.addEventListener('open-edit-modal', (e) => {
+                    this.formData = e.detail;
+                    this.showEditModal = true;
+                });
+            }
+        }));
+    });
+    function viewData(row) {
+        window.dispatchEvent(new CustomEvent('open-view-modal', {
+            detail: row
+        }));
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('viewModal', () => ({
+            showViewModal: false,
+            formData: {},
+            init() {
+                window.addEventListener('open-view-modal', (e) => {
+                    this.formData = e.detail;
+                    this.showViewModal = true;
+                });
+            }
+        }));
+    });
+</script>
+<script>
+    function updateDis() {
+        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+        bulkDeleteBtn.disabled = checkedCount === 0;
+
+        const allBoxes = document.querySelectorAll('.item-checkbox');
+        const selectAll = document.getElementById("select-all");
+        selectAll.checked = checkedCount === allBoxes.length;
+    }
+
+    function toggleSelectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+        });
+
+        updateDis();
+    }
+</script>
+
+<?php include '../../../footer-main.php'; ?>
